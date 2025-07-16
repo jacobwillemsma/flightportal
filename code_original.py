@@ -29,16 +29,84 @@ w.mode = WatchDogMode.RESET
 
 FONT=terminalio.FONT
 
-try:
-    from secrets import secrets
-except ImportError:
-    print("Secrets including geo are kept in secrets.py, please add them there!")
-    raise
+# WiFi and location configuration
+WIFI_SSID = "egg"
+WIFI_PASSWORD = "tamagotheeggisacat"
 
 # How often to query fr24 - quick enough to catch a plane flying over, not so often as to cause any issues, hopefully
 QUERY_DELAY=30
-#Area to search for flights, see secrets file
-BOUNDS_BOX=secrets["bounds_box"]
+
+# Runway selection mode
+# Options: "AUTO" (use ATIS), "RWY04", or "RWY22"
+RUNWAY_MODE = "AUTO"
+
+# LGA approach corridors with 1-mile buffer around viewing areas
+# Runway 04 approach corridor
+# NE: 40°44'29.9"N 73°54'24.7"W, SW: 40°42'04.7"N 73°56'34.2"W
+RWY04_BOUNDS_BOX = "40.756132,40.686813,-73.961956,-73.887739"
+
+# Runway 22 approach corridor  
+# NE: 40°51'41.0"N 73°48'16.4"W, SW: 40°47'11.3"N 73°52'09.5"W
+RWY22_BOUNDS_BOX = "40.875882,40.771979,-73.888458,-73.785404"
+
+# Import LGA airport information client
+from lga_client import get_current_metar, get_active_runways
+import re
+
+def get_atis_landing_runway():
+    """Get landing runway using the LGA client"""
+    runways = get_active_runways()
+    arrival_runway = runways.get("arrivals")
+    
+    if not arrival_runway:
+        print("Could not determine arrival runway from ATIS")
+        return None
+    
+    # Map to corridor names
+    runway_num = re.sub(r'[LCR]$', '', arrival_runway)
+    if runway_num in ['04', '4']:
+        return "RWY04"
+    elif runway_num in ['22']:
+        return "RWY22"
+    else:
+        print(f"ATIS shows runway {arrival_runway} (not monitored)")
+        return None
+
+def get_lga_metar():
+    """Get current METAR using the LGA client"""
+    metar = get_current_metar()
+    if metar:
+        print(f"Current METAR: {metar}")
+        return metar
+    else:
+        print("No METAR data available")
+        return None
+
+# Get current weather information
+print("Fetching current LGA weather...")
+CURRENT_METAR = get_lga_metar()
+
+# Determine active runway and set bounding box
+if RUNWAY_MODE == "AUTO":
+    print("Auto-detecting active runway from LGA ATIS...")
+    ACTIVE_RUNWAY = get_atis_landing_runway()
+    
+    if ACTIVE_RUNWAY:
+        print(f"ATIS indicates landing runway: {ACTIVE_RUNWAY}")
+    else:
+        print("Could not determine runway from ATIS, defaulting to RWY04")
+        ACTIVE_RUNWAY = "RWY04"
+else:
+    ACTIVE_RUNWAY = RUNWAY_MODE
+    print(f"Manual runway selection: {ACTIVE_RUNWAY}")
+
+# Set active bounding box based on runway selection
+if ACTIVE_RUNWAY == "RWY22":
+    BOUNDS_BOX = RWY22_BOUNDS_BOX
+    print(f"Monitoring LGA Runway 22 approach corridor")
+else:
+    BOUNDS_BOX = RWY04_BOUNDS_BOX
+    print(f"Monitoring LGA Runway 04 approach corridor")
 
 # Colours and timings
 ROW_ONE_COLOUR=0xEE82EE
@@ -77,6 +145,8 @@ esp = adafruit_esp32spi.ESP_SPIcontrol(spi, esp32_cs, esp32_ready, esp32_reset)
 status_light = neopixel.NeoPixel(
     board.NEOPIXEL, 1, brightness=0.2
 )
+# Create secrets dict for compatibility with WiFiManager
+secrets = {"ssid": WIFI_SSID, "password": WIFI_PASSWORD}
 wifi = adafruit_esp32spi_wifimanager.ESPSPI_WiFiManager(esp, secrets, status_light,debug=False,attempts=1)
 
 # Top level matrixportal object
@@ -342,11 +412,10 @@ def parse_details_json():
             label3_long=''
 
 
-        # optional filter example - check things and return false if you want
-
-        # if altitude > 10000:
-        #    print("Altitude Filter matched so don't display anything")
-        #    return False
+        # Filter for approach traffic only (under 10,000 feet)
+        if altitude > 10000:
+            print("High altitude flight filtered out (above 10,000 ft)")
+            return False
 
     except (KeyError, ValueError,TypeError) as e:
         print("JSON error")
