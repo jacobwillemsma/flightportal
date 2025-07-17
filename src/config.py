@@ -23,7 +23,7 @@ WEATHER_REFRESH_INTERVAL = 300 # How often to refresh weather when not RWY04 (5 
 SLEEP_WHEN_INACTIVE = 60       # Sleep time when runway not active
 
 # LGA Runway 04 Approach Corridor (the only one we can see)
-# NE: 40°44'29.9"N 73°54'24.7"W, SW: 40°42'04.7"N 73°56'34.2"W (1-mile buffer)
+# NE: 40deg44'29.9"N 73deg54'24.7"W, SW: 40deg42'04.7"N 73deg56'34.2"W (1-mile buffer)
 RWY04_BOUNDS_BOX = "40.756132,40.686813,-73.961956,-73.887739"
 
 # Flight Filtering
