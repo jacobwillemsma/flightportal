@@ -9,28 +9,40 @@ import gc
 # from typing import Dict, Any, Optional  # Not available in Python 3.4.2
 
 try:
-    # MatrixPortal/CircuitPython imports
-    import board
-    import terminalio
-    import displayio
-    import framebufferio
-    import rgbmatrix
-    import busio
-    import neopixel
-    from digitalio import DigitalInOut
-    from adafruit_matrixportal.matrixportal import MatrixPortal
-    from adafruit_portalbase.network import HttpError
-    from adafruit_esp32spi import adafruit_esp32spi
-    from adafruit_esp32spi import adafruit_esp32spi_wifimanager
-    import adafruit_display_text.label
-    import adafruit_requests as requests
-    from microcontroller import watchdog as w
-    from watchdog import WatchDogMode
+    # Try Raspberry Pi RGB Matrix first
+    from rgbmatrix import RGBMatrix, RGBMatrixOptions
+    from PIL import Image, ImageDraw, ImageFont
+    import time
     HARDWARE_AVAILABLE = True
+    HARDWARE_TYPE = "raspberry_pi"
+    print("Raspberry Pi RGB Matrix hardware detected")
 except ImportError:
-    # Running on desktop for testing
-    HARDWARE_AVAILABLE = False
-    print("Hardware not available - running in test mode")
+    try:
+        # Try MatrixPortal/CircuitPython imports as fallback
+        import board
+        import terminalio
+        import displayio
+        import framebufferio
+        import rgbmatrix
+        import busio
+        import neopixel
+        from digitalio import DigitalInOut
+        from adafruit_matrixportal.matrixportal import MatrixPortal
+        from adafruit_portalbase.network import HttpError
+        from adafruit_esp32spi import adafruit_esp32spi
+        from adafruit_esp32spi import adafruit_esp32spi_wifimanager
+        import adafruit_display_text.label
+        import adafruit_requests as requests
+        from microcontroller import watchdog as w
+        from watchdog import WatchDogMode
+        HARDWARE_AVAILABLE = True
+        HARDWARE_TYPE = "matrixportal"
+        print("MatrixPortal hardware detected")
+    except ImportError:
+        # Running on desktop for testing
+        HARDWARE_AVAILABLE = False
+        HARDWARE_TYPE = "none"
+        print("No matrix hardware available - running in test mode")
 
 try:
     from . import config
@@ -42,19 +54,61 @@ class DisplayController:
     
     def __init__(self):
         self.hardware_ready = False
+        self.hardware_type = HARDWARE_TYPE
+        
+        # MatrixPortal specific
         self.matrixportal = None
         self.display_group = None
         self.labels = []
         self.plane_group = None
+        
+        # Raspberry Pi specific
+        self.matrix = None
+        self.canvas = None
+        self.font = None
         
         # Text content for labels
         self.label_short_text = ['', '', '']
         self.label_long_text = ['', '', '']
         
         if HARDWARE_AVAILABLE:
-            self._init_hardware()
+            if self.hardware_type == "raspberry_pi":
+                self._init_raspberry_pi_hardware()
+            elif self.hardware_type == "matrixportal":
+                self._init_matrixportal_hardware()
     
-    def _init_hardware(self):
+    def _init_raspberry_pi_hardware(self):
+        """Initialize Raspberry Pi RGB Matrix hardware."""
+        try:
+            # Configure RGB Matrix options
+            options = RGBMatrixOptions()
+            options.rows = 32
+            options.cols = 64
+            options.chain_length = 1
+            options.parallel = 1
+            options.hardware_mapping = 'adafruit-hat'
+            options.gpio_slowdown = 2  # May need adjustment for Pi model
+            options.brightness = 50
+            options.drop_privileges = False  # Keep root privileges for GPIO
+            
+            # Initialize matrix
+            self.matrix = RGBMatrix(options=options)
+            self.canvas = self.matrix.CreateFrameCanvas()
+            
+            # Try to load a font (fallback to default if not available)
+            try:
+                self.font = ImageFont.load_default()
+            except:
+                self.font = None
+            
+            self.hardware_ready = True
+            print("Raspberry Pi RGB Matrix initialized successfully")
+            
+        except Exception as e:
+            print("Raspberry Pi hardware initialization failed: " + str(e))
+            self.hardware_ready = False
+    
+    def _init_matrixportal_hardware(self):
         """Initialize MatrixPortal and display hardware."""
         try:
             # Configure watchdog
