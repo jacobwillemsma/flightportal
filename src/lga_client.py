@@ -7,12 +7,12 @@ Clean client for fetching LGA runway and weather information.
 import requests
 import json
 import re
-from typing import Optional, Dict, Any
+# from typing import Optional, Dict, Any  # Not available in Python 3.4.2
 
 ATIS_URL = "https://datis.clowd.io/api/KLGA"
 METAR_URL = "https://aviationweather.gov/api/data/metar?ids=KLGA&format=json"
 
-def get_current_metar() -> Optional[str]:
+def get_current_metar():
     """
     Get current METAR rawOb from Aviation Weather API.
     
@@ -28,10 +28,10 @@ def get_current_metar() -> Optional[str]:
                 return data[0].get("rawOb", "")
         return None
     except Exception as e:
-        print(f"Error fetching METAR data: {e}")
+        print("Error fetching METAR data: " + str(e))
         return None
 
-def get_active_runways() -> Dict[str, Optional[str]]:
+def get_active_runways():
     """
     Get current active runways from LGA ATIS.
     
@@ -60,10 +60,10 @@ def get_active_runways() -> Dict[str, Optional[str]]:
         return {"arrivals": None, "departures": None}
         
     except Exception as e:
-        print(f"Error fetching ATIS data: {e}")
+        print("Error fetching ATIS data: " + str(e))
         return {"arrivals": None, "departures": None}
 
-def _parse_landing_runway(atis_text: str) -> Optional[str]:
+def _parse_landing_runway(atis_text):
     """
     Parse ATIS text to extract the landing runway.
     
@@ -104,7 +104,7 @@ def _parse_landing_runway(atis_text: str) -> Optional[str]:
     
     return None
 
-def _parse_departure_runway(atis_text: str) -> Optional[str]:
+def _parse_departure_runway(atis_text):
     """Parse ATIS text to extract the departure runway."""
     if not atis_text:
         return None
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     print("-" * 20)
     metar = get_current_metar()
     if metar:
-        print(f"✅ METAR: {metar}")
+        print("✅ METAR: {}".format(metar))
     else:
         print("❌ Could not fetch METAR")
     print()
@@ -138,8 +138,8 @@ if __name__ == "__main__":
     print("Active Runways:")
     print("-" * 20)
     runways = get_active_runways()
-    print(f"Arrivals:   {runways['arrivals'] or 'Unknown'}")
-    print(f"Departures: {runways['departures'] or 'Unknown'}")
+    print("Arrivals:   {}".format(runways['arrivals'] or 'Unknown'))
+    print("Departures: {}".format(runways['departures'] or 'Unknown'))
     print()
     
     # Show example usage
@@ -149,8 +149,8 @@ if __name__ == "__main__":
     print()
     print("# Get weather")
     print("metar = get_current_metar()")
-    print(f"# Returns: '{metar}'")
+    print("# Returns: '{}'".format(metar))
     print()
     print("# Get runways")
     print("runways = get_active_runways()")
-    print(f"# Returns: {runways}")
+    print("# Returns: {}".format(runways))

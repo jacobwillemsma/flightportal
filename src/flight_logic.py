@@ -6,7 +6,7 @@ Handles all flight data, runway detection, and caching logic.
 
 import time
 import json
-from typing import Dict, Optional, Any, List
+# from typing import Dict, Optional, Any, List  # Not available in Python 3.4.2
 try:
     import adafruit_requests as requests
 except ImportError:
@@ -30,10 +30,10 @@ class FlightLogic:
         self.cached_metar = None
         
         # Flight data URLs
-        self.flight_search_url = f"https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds={config.RWY04_BOUNDS_BOX}{config.FLIGHT_SEARCH_TAIL}"
+        self.flight_search_url = "https://data-cloud.flightradar24.com/zones/fcgi/feed.js?bounds={}{}".format(config.RWY04_BOUNDS_BOX, config.FLIGHT_SEARCH_TAIL)
         self.flight_details_url = "https://data-live.flightradar24.com/clickhandler/?flight="
     
-    def check_runway_status(self, force_refresh: bool = False) -> Dict[str, Any]:
+    def check_runway_status(self, force_refresh=False):
         """
         Check current runway status with 15-minute caching.
         
@@ -75,12 +75,12 @@ class FlightLogic:
             self.last_runway_check = current_time
             
             if config.DEBUG_MODE:
-                print(f"Runway status updated: Arrivals={arrivals}, RWY04_Active={runway_04_active}")
+                print("Runway status updated: Arrivals={}, RWY04_Active={}".format(arrivals, runway_04_active))
             
             return self.cached_runway_status
             
         except Exception as e:
-            print(f"Error checking runway status: {e}")
+            print("Error checking runway status: " + str(e))
             
             # Return cached data if available, otherwise default to inactive
             if self.cached_runway_status:
@@ -93,7 +93,7 @@ class FlightLogic:
                     "last_updated": current_time
                 }
     
-    def get_runway_04_flights(self) -> Optional[Dict[str, Any]]:
+    def get_runway_04_flights(self):
         """
         Get flight data for runway 04 approach corridor.
         
@@ -108,7 +108,7 @@ class FlightLogic:
             )
             
             if response.status_code != 200:
-                print(f"Flight API returned status {response.status_code}")
+                print("Flight API returned status {}".format(response.status_code))
                 return None
             
             data = response.json()
@@ -129,10 +129,10 @@ class FlightLogic:
             return None
             
         except Exception as e:
-            print(f"Error fetching flights: {e}")
+            print("Error fetching flights: " + str(e))
             return None
     
-    def _parse_flight_data(self, flight_id: str, flight_info: List) -> Optional[Dict[str, Any]]:
+    def _parse_flight_data(self, flight_id, flight_info):
         """Parse raw flight data into structured format."""
         try:
             if len(flight_info) < 13:
@@ -154,14 +154,14 @@ class FlightLogic:
                 "speed": speed,
                 "origin": origin,
                 "destination": destination,
-                "route": f"{origin} → {destination}"
+                "route": "{} → {}".format(origin, destination)
             }
             
         except Exception as e:
-            print(f"Error parsing flight data: {e}")
+            print("Error parsing flight data: " + str(e))
             return None
     
-    def get_weather_display(self, force_refresh: bool = False) -> Dict[str, Any]:
+    def get_weather_display(self, force_refresh=False):
         """
         Get weather and runway information for display.
         
@@ -197,7 +197,7 @@ class FlightLogic:
             return self.cached_weather_data
             
         except Exception as e:
-            print(f"Error fetching weather: {e}")
+            print("Error fetching weather: " + str(e))
             
             # Return cached data if available
             if self.cached_weather_data:
@@ -211,7 +211,7 @@ class FlightLogic:
                     "last_updated": current_time
                 }
     
-    def get_display_data(self) -> Dict[str, Any]:
+    def get_display_data(self):
         """
         Main function to get appropriate display data based on runway status.
         

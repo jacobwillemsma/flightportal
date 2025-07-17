@@ -8,7 +8,7 @@ This is the main entry point for the MatrixPortal device.
 
 import time
 import gc
-from typing import Dict, Any
+# from typing import Dict, Any  # Not available in Python 3.4.2
 
 try:
     # CircuitPython specific imports
@@ -42,7 +42,7 @@ class FlightPortalApp:
         self.current_display_mode = None  # 'flight', 'weather', 'no_flights'
         
         print("FlightPortal Starting...")
-        print(f"Hardware available: {HARDWARE_AVAILABLE}")
+        print("Hardware available: {}".format(HARDWARE_AVAILABLE))
         
         # Initialize display
         if not display_controller.hardware_ready and HARDWARE_AVAILABLE:
@@ -82,7 +82,7 @@ class FlightPortalApp:
                     sleep_time = config.SLEEP_WHEN_INACTIVE
                     
                 else:
-                    print(f"Unknown display type: {display_data.get('type')}")
+                    print("Unknown display type: {}".format(display_data.get('type')))
                     sleep_time = config.SLEEP_WHEN_INACTIVE
                 
                 # Feed watchdog and sleep
@@ -91,33 +91,33 @@ class FlightPortalApp:
                 # Periodic memory cleanup
                 if config.PRINT_MEMORY_INFO:
                     gc.collect()
-                    print(f"Memory free: {gc.mem_free()}")
+                    print("Memory free: {}".format(gc.mem_free()))
                 
             except KeyboardInterrupt:
                 print("Shutting down...")
                 break
                 
             except Exception as e:
-                print(f"Main loop error: {e}")
+                print("Main loop error: " + str(e))
                 self._sleep_with_watchdog(30)  # Wait before retrying
     
-    def _handle_flight_display(self, display_data: Dict[str, Any]):
+    def _handle_flight_display(self, display_data):
         """Handle displaying flight information."""
         flight_id = display_data.get("flight_id")
         
         if flight_id == self.last_flight_id and self.current_display_mode == "flight":
             # Same flight, keep showing it
             if config.DEBUG_MODE:
-                print(f"Continuing to display flight {flight_id}")
+                print("Continuing to display flight {}".format(flight_id))
         else:
             # New flight or mode change
-            print(f"New flight found: {display_data.get('callsign')} ({flight_id})")
+            print("New flight found: {} ({})".format(display_data.get('callsign'), flight_id))
             display_controller.clear_display()
             display_controller.show_flight_info(display_data)
             self.last_flight_id = flight_id
             self.current_display_mode = "flight"
     
-    def _handle_no_flights_display(self, display_data: Dict[str, Any]):
+    def _handle_no_flights_display(self, display_data):
         """Handle displaying 'no flights' message when RWY04 is active."""
         if self.current_display_mode != "no_flights":
             print("RWY04 active but no approach traffic found")
@@ -125,7 +125,7 @@ class FlightPortalApp:
             self.current_display_mode = "no_flights"
             self.last_flight_id = None
     
-    def _handle_weather_display(self, display_data: Dict[str, Any], current_time: float):
+    def _handle_weather_display(self, display_data, current_time):
         """Handle displaying weather information."""
         # Refresh weather data periodically
         if (current_time - self.last_weather_refresh) >= config.WEATHER_REFRESH_INTERVAL:
@@ -135,12 +135,12 @@ class FlightPortalApp:
         
         if self.current_display_mode != "weather":
             arrivals = display_data.get("arrivals_runway", "Unknown")
-            print(f"Arrivals on runway {arrivals} - showing weather")
+            print("Arrivals on runway {} - showing weather".format(arrivals))
             display_controller.show_weather_info(display_data)
             self.current_display_mode = "weather"
             self.last_flight_id = None
     
-    def _sleep_with_watchdog(self, sleep_time: int):
+    def _sleep_with_watchdog(self, sleep_time):
         """Sleep while feeding the watchdog periodically."""
         if HARDWARE_AVAILABLE:
             # Feed watchdog every 5 seconds during sleep
@@ -168,7 +168,7 @@ def main():
     except KeyboardInterrupt:
         print("Application interrupted by user")
     except Exception as e:
-        print(f"Application error: {e}")
+        print("Application error: " + str(e))
     finally:
         app.cleanup()
 

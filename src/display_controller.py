@@ -6,7 +6,7 @@ Handles all MatrixPortal hardware, LED display, and animations.
 
 import time
 import gc
-from typing import Dict, Any, Optional
+# from typing import Dict, Any, Optional  # Not available in Python 3.4.2
 
 try:
     # MatrixPortal/CircuitPython imports
@@ -93,7 +93,7 @@ class DisplayController:
             print("Hardware initialized successfully")
             
         except Exception as e:
-            print(f"Hardware initialization failed: {e}")
+            print("Hardware initialization failed: " + str(e))
             self.hardware_ready = False
     
     def _setup_display(self):
@@ -149,9 +149,9 @@ class DisplayController:
             self.plane_group.append(plane_sprite)
             
         except Exception as e:
-            print(f"Plane animation setup failed: {e}")
+            print("Plane animation setup failed: " + str(e))
     
-    def show_flight_info(self, flight_data: Dict[str, Any]):
+    def show_flight_info(self, flight_data):
         """
         Display flight information with animations.
         
@@ -171,14 +171,14 @@ class DisplayController:
         # Short text for static display
         self.label_short_text = [
             callsign[:10],
-            f"{aircraft} {altitude}ft",
+            "{} {}ft".format(aircraft, altitude),
             route[:10] if route else ""
         ]
         
         # Long text for scrolling
         self.label_long_text = [
             callsign,
-            f"{aircraft} at {altitude} feet",
+            "{} at {} feet".format(aircraft, altitude),
             route
         ]
         
@@ -186,9 +186,9 @@ class DisplayController:
         self._display_with_animation()
         
         if config.DEBUG_MODE:
-            print(f"Displayed flight: {callsign} - {aircraft} at {altitude}ft")
+            print("Displayed flight: {} - {} at {}ft".format(callsign, aircraft, altitude))
     
-    def show_weather_info(self, weather_data: Dict[str, Any]):
+    def show_weather_info(self, weather_data):
         """
         Display weather and runway information (static display).
         
@@ -207,17 +207,17 @@ class DisplayController:
         wind_info = self._extract_wind_from_metar(metar)
         
         # Static text display (no scrolling for weather)
-        self.labels[0].text = f"ARR: RWY{arrivals}"
-        self.labels[1].text = f"DEP: RWY{departures}" 
+        self.labels[0].text = "ARR: RWY{}".format(arrivals)
+        self.labels[1].text = "DEP: RWY{}".format(departures) 
         self.labels[2].text = wind_info
         
         # Show static display
         self.matrixportal.display.show(self.display_group)
         
         if config.DEBUG_MODE:
-            print(f"Displayed weather: ARR={arrivals}, DEP={departures}")
+            print("Displayed weather: ARR={}, DEP={}".format(arrivals, departures))
     
-    def show_no_flights_message(self, message_data: Dict[str, Any]):
+    def show_no_flights_message(self, message_data):
         """Display message when RWY04 active but no flights."""
         if not self.hardware_ready:
             print(message_data.get("message", "No flights"))
@@ -283,7 +283,7 @@ class DisplayController:
             self.matrixportal.display.show(self.display_group)
             
         except Exception as e:
-            print(f"Plane animation error: {e}")
+            print("Plane animation error: " + str(e))
     
     def _scroll_label(self, label, text):
         """Scroll text across the display."""
@@ -301,7 +301,7 @@ class DisplayController:
             w.feed()  # Feed watchdog
             time.sleep(config.TEXT_SPEED)
     
-    def _extract_wind_from_metar(self, metar: str) -> str:
+    def _extract_wind_from_metar(self, metar):
         """Extract wind information from METAR string."""
         if not metar:
             return "No wind data"
@@ -313,13 +313,13 @@ class DisplayController:
             if wind_match:
                 direction = wind_match.group(1)
                 speed = wind_match.group(2).lstrip('0') or '0'
-                return f"{direction}@{speed}kt"
+                return "{}@{}kt".format(direction, speed)
             else:
                 return "Wind unavailable"
         except Exception:
             return "Wind error"
     
-    def _print_flight_info(self, flight_data: Dict[str, Any]):
+    def _print_flight_info(self, flight_data):
         """Print flight info to console when hardware not available."""
         callsign = flight_data.get("callsign", "Unknown")
         aircraft = flight_data.get("aircraft_type", "")
@@ -327,23 +327,23 @@ class DisplayController:
         route = flight_data.get("route", "")
         
         print("=" * 40)
-        print(f"FLIGHT DISPLAY")
-        print(f"Callsign: {callsign}")
-        print(f"Aircraft: {aircraft} at {altitude} feet")
-        print(f"Route: {route}")
+        print("FLIGHT DISPLAY")
+        print("Callsign: {}".format(callsign))
+        print("Aircraft: {} at {} feet".format(aircraft, altitude))
+        print("Route: {}".format(route))
         print("=" * 40)
     
-    def _print_weather_info(self, weather_data: Dict[str, Any]):
+    def _print_weather_info(self, weather_data):
         """Print weather info to console when hardware not available."""
         arrivals = weather_data.get("arrivals_runway", "Unknown")
         departures = weather_data.get("departures_runway", "Unknown")
         metar = weather_data.get("metar", "Weather unavailable")
         
         print("=" * 40)
-        print(f"WEATHER DISPLAY")
-        print(f"Arrivals: RWY{arrivals}")
-        print(f"Departures: RWY{departures}")
-        print(f"METAR: {metar}")
+        print("WEATHER DISPLAY")
+        print("Arrivals: RWY{}".format(arrivals))
+        print("Departures: RWY{}".format(departures))
+        print("METAR: {}".format(metar))
         print("=" * 40)
     
     def feed_watchdog(self):
@@ -356,7 +356,7 @@ class DisplayController:
         self.clear_display()
         if config.PRINT_MEMORY_INFO:
             gc.collect()
-            print(f"Memory free: {gc.mem_free()}")
+            print("Memory free: {}".format(gc.mem_free()))
 
 # Global instance for easy access
 display_controller = DisplayController()
