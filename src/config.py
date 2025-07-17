@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 FlightPortal Configuration
 Centralized configuration for the LGA flight monitoring application.

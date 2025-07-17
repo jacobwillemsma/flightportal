@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 FlightPortal Display Controller
 Handles all MatrixPortal hardware, LED display, and animations.
@@ -6,7 +6,7 @@ Handles all MatrixPortal hardware, LED display, and animations.
 
 import time
 import gc
-# from typing import Dict, Any, Optional  # Not available in Python 3.4.2
+# typing module not available in Python 2.7
 
 try:
     # Try Raspberry Pi RGB Matrix first (Adafruit_RGBmatrix API)
@@ -15,7 +15,7 @@ try:
     import time
     HARDWARE_AVAILABLE = True
     HARDWARE_TYPE = "raspberry_pi"
-    print("Raspberry Pi RGB Matrix hardware detected")
+    print "Raspberry Pi RGB Matrix hardware detected"
 except ImportError:
     try:
         # Try MatrixPortal/CircuitPython imports as fallback
@@ -37,12 +37,12 @@ except ImportError:
         from watchdog import WatchDogMode
         HARDWARE_AVAILABLE = True
         HARDWARE_TYPE = "matrixportal"
-        print("MatrixPortal hardware detected")
+        print "MatrixPortal hardware detected"
     except ImportError:
         # Running on desktop for testing
         HARDWARE_AVAILABLE = False
         HARDWARE_TYPE = "none"
-        print("No matrix hardware available - running in test mode")
+        print "No matrix hardware available - running in test mode"
 
 try:
     from . import config
@@ -93,10 +93,10 @@ class DisplayController:
             self.current_image = Image.new('RGB', (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT), (0, 0, 0))
             
             self.hardware_ready = True
-            print("Raspberry Pi RGB Matrix initialized successfully (128x32)")
+            print "Raspberry Pi RGB Matrix initialized successfully (128x32)"
             
         except Exception as e:
-            print("Raspberry Pi hardware initialization failed: " + str(e))
+            print "Raspberry Pi hardware initialization failed: " + str(e)
             self.hardware_ready = False
     
     def _init_matrixportal_hardware(self):
@@ -135,10 +135,10 @@ class DisplayController:
             self._setup_display()
             
             self.hardware_ready = True
-            print("Hardware initialized successfully")
+            print "Hardware initialized successfully"
             
         except Exception as e:
-            print("Hardware initialization failed: " + str(e))
+            print "Hardware initialization failed: " + str(e)
             self.hardware_ready = False
     
     def _setup_display(self):
@@ -194,7 +194,7 @@ class DisplayController:
             self.plane_group.append(plane_sprite)
             
         except Exception as e:
-            print("Plane animation setup failed: " + str(e))
+            print "Plane animation setup failed: " + str(e)
     
     def show_flight_info(self, flight_data):
         """
@@ -234,7 +234,7 @@ class DisplayController:
         
         # Draw the text
         draw.text((2, y_positions[0]), callsign, fill=colors[0], font=self.font)
-        draw.text((2, y_positions[1]), "{} {}ft".format(aircraft, altitude), fill=colors[1], font=self.font)
+        draw.text((2, y_positions[1]), "%s %sft" % (aircraft, altitude), fill=colors[1], font=self.font)
         draw.text((2, y_positions[2]), route[:18] if route else "", fill=colors[2], font=self.font)
         
         # Show on matrix
@@ -249,7 +249,7 @@ class DisplayController:
             self._scroll_text_rpi(route, y_positions[2], colors[2])
         
         if config.DEBUG_MODE:
-            print("Displayed flight: {} - {} at {}ft".format(callsign, aircraft, altitude))
+            print "Displayed flight: %s - %s at %sft" % (callsign, aircraft, altitude)
     
     def _show_flight_info_matrixportal(self, flight_data):
         """Display flight info on MatrixPortal (existing logic)."""
@@ -262,14 +262,14 @@ class DisplayController:
         # Short text for static display
         self.label_short_text = [
             callsign[:10],
-            "{} {}ft".format(aircraft, altitude),
+            "%s %sft" % (aircraft, altitude),
             route[:10] if route else ""
         ]
         
         # Long text for scrolling
         self.label_long_text = [
             callsign,
-            "{} at {} feet".format(aircraft, altitude),
+            "%s at %s feet" % (aircraft, altitude),
             route
         ]
         
@@ -277,7 +277,7 @@ class DisplayController:
         self._display_with_animation()
         
         if config.DEBUG_MODE:
-            print("Displayed flight: {} - {} at {}ft".format(callsign, aircraft, altitude))
+            print "Displayed flight: %s - %s at %sft" % (callsign, aircraft, altitude)
     
     def show_weather_info(self, weather_data):
         """
@@ -317,8 +317,8 @@ class DisplayController:
         ]
         
         # Draw the weather text
-        draw.text((2, y_positions[0]), "ARR: RWY{}".format(arrivals), fill=colors[0], font=self.font)
-        draw.text((2, y_positions[1]), "DEP: RWY{}".format(departures), fill=colors[1], font=self.font)
+        draw.text((2, y_positions[0]), "ARR: RWY%s" % arrivals, fill=colors[0], font=self.font)
+        draw.text((2, y_positions[1]), "DEP: RWY%s" % departures, fill=colors[1], font=self.font)
         draw.text((2, y_positions[2]), wind_info, fill=colors[2], font=self.font)
         
         # Show on matrix
@@ -326,7 +326,7 @@ class DisplayController:
         self.current_image = image
         
         if config.DEBUG_MODE:
-            print("Displayed weather: ARR={}, DEP={}".format(arrivals, departures))
+            print "Displayed weather: ARR=%s, DEP=%s" % (arrivals, departures)
     
     def _show_weather_info_matrixportal(self, weather_data):
         """Display weather info on MatrixPortal (existing logic)."""
@@ -338,20 +338,20 @@ class DisplayController:
         wind_info = self._extract_wind_from_metar(metar)
         
         # Static text display (no scrolling for weather)
-        self.labels[0].text = "ARR: RWY{}".format(arrivals)
-        self.labels[1].text = "DEP: RWY{}".format(departures) 
+        self.labels[0].text = "ARR: RWY%s" % arrivals
+        self.labels[1].text = "DEP: RWY%s" % departures 
         self.labels[2].text = wind_info
         
         # Show static display
         self.matrixportal.display.show(self.display_group)
         
         if config.DEBUG_MODE:
-            print("Displayed weather: ARR={}, DEP={}".format(arrivals, departures))
+            print "Displayed weather: ARR=%s, DEP=%s" % (arrivals, departures)
     
     def show_no_flights_message(self, message_data):
         """Display message when RWY04 active but no flights."""
         if not self.hardware_ready:
-            print(message_data.get("message", "No flights"))
+            print message_data.get("message", "No flights")
             return
         
         if self.hardware_type == "raspberry_pi":
@@ -395,7 +395,7 @@ class DisplayController:
     def clear_display(self):
         """Clear the display."""
         if not self.hardware_ready:
-            print("Display cleared")
+            print "Display cleared"
             return
         
         if self.hardware_type == "raspberry_pi":
@@ -446,7 +446,7 @@ class DisplayController:
             self.matrixportal.display.show(self.display_group)
             
         except Exception as e:
-            print("Plane animation error: " + str(e))
+            print "Plane animation error: " + str(e)
     
     def _scroll_label(self, label, text):
         """Scroll text across the display."""
@@ -476,7 +476,7 @@ class DisplayController:
             if wind_match:
                 direction = wind_match.group(1)
                 speed = wind_match.group(2).lstrip('0') or '0'
-                return "{}@{}kt".format(direction, speed)
+                return "%s@%skt" % (direction, speed)
             else:
                 return "Wind unavailable"
         except Exception:
@@ -489,12 +489,12 @@ class DisplayController:
         altitude = flight_data.get("altitude", 0)
         route = flight_data.get("route", "")
         
-        print("=" * 40)
-        print("FLIGHT DISPLAY")
-        print("Callsign: {}".format(callsign))
-        print("Aircraft: {} at {} feet".format(aircraft, altitude))
-        print("Route: {}".format(route))
-        print("=" * 40)
+        print "=" * 40
+        print "FLIGHT DISPLAY"
+        print "Callsign: %s" % callsign
+        print "Aircraft: %s at %s feet" % (aircraft, altitude)
+        print "Route: %s" % route
+        print "=" * 40
     
     def _print_weather_info(self, weather_data):
         """Print weather info to console when hardware not available."""
@@ -502,12 +502,12 @@ class DisplayController:
         departures = weather_data.get("departures_runway", "Unknown")
         metar = weather_data.get("metar", "Weather unavailable")
         
-        print("=" * 40)
-        print("WEATHER DISPLAY")
-        print("Arrivals: RWY{}".format(arrivals))
-        print("Departures: RWY{}".format(departures))
-        print("METAR: {}".format(metar))
-        print("=" * 40)
+        print "=" * 40
+        print "WEATHER DISPLAY"
+        print "Arrivals: RWY%s" % arrivals
+        print "Departures: RWY%s" % departures
+        print "METAR: %s" % metar
+        print "=" * 40
     
     def feed_watchdog(self):
         """Feed the hardware watchdog."""
@@ -557,7 +557,7 @@ class DisplayController:
             self.matrix.SetImage(self.current_image.im.id, 0, 0)
             
         except Exception as e:
-            print("Plane animation error: " + str(e))
+            print "Plane animation error: " + str(e)
     
     def _scroll_text_rpi(self, text, y_pos, color):
         """Scroll text across the Raspberry Pi RGB Matrix."""
@@ -585,14 +585,14 @@ class DisplayController:
             self.matrix.SetImage(self.current_image.im.id, 0, 0)
             
         except Exception as e:
-            print("Text scrolling error: " + str(e))
+            print "Text scrolling error: " + str(e)
 
     def cleanup(self):
         """Cleanup display resources."""
         self.clear_display()
         if config.PRINT_MEMORY_INFO:
             gc.collect()
-            print("Memory free: {}".format(gc.mem_free()))
+            print "Memory free: %s" % gc.mem_free()
 
 # Global instance for easy access
 display_controller = DisplayController()

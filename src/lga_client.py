@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 LGA Airport Information Client
 Clean client for fetching LGA runway and weather information.
@@ -7,7 +7,7 @@ Clean client for fetching LGA runway and weather information.
 import requests
 import json
 import re
-# from typing import Optional, Dict, Any  # Not available in Python 3.4.2
+# typing module not available in Python 2.7
 
 ATIS_URL = "https://datis.clowd.io/api/KLGA"
 METAR_URL = "https://aviationweather.gov/api/data/metar?ids=KLGA&format=json"
@@ -28,7 +28,7 @@ def get_current_metar():
                 return data[0].get("rawOb", "")
         return None
     except Exception as e:
-        print("Error fetching METAR data: " + str(e))
+        print "Error fetching METAR data: " + str(e)
         return None
 
 def get_active_runways():
@@ -60,7 +60,7 @@ def get_active_runways():
         return {"arrivals": None, "departures": None}
         
     except Exception as e:
-        print("Error fetching ATIS data: " + str(e))
+        print "Error fetching ATIS data: " + str(e)
         return {"arrivals": None, "departures": None}
 
 def _parse_landing_runway(atis_text):
@@ -121,36 +121,36 @@ def _parse_departure_runway(atis_text):
 
 
 if __name__ == "__main__":
-    print("LGA Airport Information Client")
-    print("=" * 40)
+    print "LGA Airport Information Client"
+    print "=" * 40
     
     # Test METAR
-    print("Current Weather:")
-    print("-" * 20)
+    print "Current Weather:"
+    print "-" * 20
     metar = get_current_metar()
     if metar:
-        print("✅ METAR: {}".format(metar))
+        print "✅ METAR: %s" % metar
     else:
-        print("❌ Could not fetch METAR")
-    print()
+        print "❌ Could not fetch METAR"
+    print
     
     # Test runway information
-    print("Active Runways:")
-    print("-" * 20)
+    print "Active Runways:"
+    print "-" * 20
     runways = get_active_runways()
-    print("Arrivals:   {}".format(runways['arrivals'] or 'Unknown'))
-    print("Departures: {}".format(runways['departures'] or 'Unknown'))
-    print()
+    print "Arrivals:   %s" % (runways['arrivals'] or 'Unknown')
+    print "Departures: %s" % (runways['departures'] or 'Unknown')
+    print
     
     # Show example usage
-    print("Example Usage:")
-    print("-" * 20)
-    print("from lga_client import get_current_metar, get_active_runways")
-    print()
-    print("# Get weather")
-    print("metar = get_current_metar()")
-    print("# Returns: '{}'".format(metar))
-    print()
-    print("# Get runways")
-    print("runways = get_active_runways()")
-    print("# Returns: {}".format(runways))
+    print "Example Usage:"
+    print "-" * 20
+    print "from lga_client import get_current_metar, get_active_runways"
+    print
+    print "# Get weather"
+    print "metar = get_current_metar()"
+    print "# Returns: '%s'" % metar
+    print
+    print "# Get runways"
+    print "runways = get_active_runways()"
+    print "# Returns: %s" % runways

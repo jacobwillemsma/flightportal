@@ -1,14 +1,21 @@
-# flightportal
-Project for displaying the details of planes overhead on an Adafruit MatrixPortal and LED matrix
+# FlightPortal
+Project for displaying the details of planes overhead on LED matrix displays
 
 (video sped up to make the file fit, the speeds and delays are configurable anyway)
 
 https://user-images.githubusercontent.com/103124527/206902629-1f31bd41-d8a8-415e-a35a-625efb20b3d6.MOV
 
-Uses an Adafruit MatrixPortal and a 64x32 LED/RGB Matrix (P4), and some fairly hacked-together FlightRadar24 API-style scraping to display the details of flights passing overhead. That code being unoffical, it may break at any time!
+**FlightPortal** supports two hardware platforms:
+1. **Adafruit MatrixPortal** with 64x32 LED/RGB Matrix (original implementation)
+2. **Raspberry Pi** with RGB LED matrices (supports chaining for larger displays)
 
-To make one you will need:
+Uses FlightRadar24 API-style scraping to display flight details passing overhead. That code being unofficial, it may break at any time!
 
+## Hardware Options
+
+### Option 1: Adafruit MatrixPortal (Original)
+
+You will need:
 1. A MatrixPortal (https://www.adafruit.com/product/4745)
 2. A P4, 64x32 RGB matrix panel (I get mine from Aliexpress)
 3. The case I designed (https://www.thingiverse.com/thing:5701517)
@@ -16,9 +23,52 @@ To make one you will need:
 5. 6 M3 screws (sorry, said M5 before but was looking at the wrong ones, my bad. Think mine are 8mm long, little bit more would be OK, shorter probably a problem)
 6. Optional: Uglu dashes to stick the diffuser on, the case holds mine on pretty well though (https://www.protapes.com/products/uglu-600-dashes-sheets)
 
+### Option 2: Raspberry Pi with RGB LED Matrix
+
+You will need:
+1. Raspberry Pi (any model with GPIO pins)
+2. RGB LED Matrix panels (32x32, 64x32, or chained configurations supported)
+3. 5V power supply (3.5A per 32x32 panel)
+4. Proper wiring connections (see `RASPBERRY_PI_SETUP.md` for GPIO pinout)
+
+**Advantages of Raspberry Pi version:**
+- Support for larger displays (chaining multiple panels)
+- More processing power for complex animations
+- Better networking capabilities
+- Easier development and debugging
+
+## Setup Instructions
+
+### MatrixPortal Setup
 Prep the portal as detailed here (https://learn.adafruit.com/adafruit-matrixportal-m4/prep-the-matrixportal), put the code and secrets files on, put your wifi details and the geo box you want to search in the secrets file, and you should be good to go!
 
-If you'd like to change the layout, colours or the flight info displayed, all that is pretty configurable, have a look at code.py. Hopefully the comments are fairly self explanatory if you're happy hacking around with python.
+### Raspberry Pi Setup
+See `RASPBERRY_PI_SETUP.md` for complete installation instructions including:
+- Building the RGB matrix library
+- GPIO wiring diagrams  
+- Python dependencies
+- Testing procedures
+
+## Project Structure
+
+```
+flightportal/
+├── src/                    # Main FlightPortal code
+│   ├── main.py            # Entry point
+│   ├── display_controller.py  # Hardware abstraction layer
+│   ├── config.py          # Configuration settings
+│   ├── flight_logic.py    # Flight tracking logic
+│   └── lga_client.py      # FlightRadar24 API client
+├── lib/                   # Hardware dependencies
+│   └── rpi-rgb-led-matrix/    # RGB Matrix library for Raspberry Pi
+├── test/                  # Test files
+├── RASPBERRY_PI_SETUP.md  # Raspberry Pi installation guide
+└── README.md              # This file
+```
+
+## Configuration
+
+If you'd like to change the layout, colours or the flight info displayed, all that is pretty configurable. Have a look at `src/config.py` for display settings and `src/main.py` for the main logic. The comments should be fairly self-explanatory if you're comfortable with Python.
 
 The libaries it needs are I think all part of the recommended prep above, but for info they are:
 

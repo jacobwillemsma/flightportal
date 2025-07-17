@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 FlightPortal Flight Logic
 Handles all flight data, runway detection, and caching logic.
@@ -6,7 +6,7 @@ Handles all flight data, runway detection, and caching logic.
 
 import time
 import json
-# from typing import Dict, Optional, Any, List  # Not available in Python 3.4.2
+# typing module not available in Python 2.7
 try:
     import adafruit_requests as requests
 except ImportError:
@@ -75,12 +75,12 @@ class FlightLogic:
             self.last_runway_check = current_time
             
             if config.DEBUG_MODE:
-                print("Runway status updated: Arrivals={}, RWY04_Active={}".format(arrivals, runway_04_active))
+                print "Runway status updated: Arrivals=%s, RWY04_Active=%s" % (arrivals, runway_04_active)
             
             return self.cached_runway_status
             
         except Exception as e:
-            print("Error checking runway status: " + str(e))
+            print "Error checking runway status: " + str(e)
             
             # Return cached data if available, otherwise default to inactive
             if self.cached_runway_status:
@@ -108,7 +108,7 @@ class FlightLogic:
             )
             
             if response.status_code != 200:
-                print("Flight API returned status {}".format(response.status_code))
+                print "Flight API returned status %s" % response.status_code
                 return None
             
             data = response.json()
@@ -129,7 +129,7 @@ class FlightLogic:
             return None
             
         except Exception as e:
-            print("Error fetching flights: " + str(e))
+            print "Error fetching flights: " + str(e)
             return None
     
     def _parse_flight_data(self, flight_id, flight_info):
@@ -158,7 +158,7 @@ class FlightLogic:
             }
             
         except Exception as e:
-            print("Error parsing flight data: " + str(e))
+            print "Error parsing flight data: " + str(e)
             return None
     
     def get_weather_display(self, force_refresh=False):
@@ -197,7 +197,7 @@ class FlightLogic:
             return self.cached_weather_data
             
         except Exception as e:
-            print("Error fetching weather: " + str(e))
+            print "Error fetching weather: " + str(e)
             
             # Return cached data if available
             if self.cached_weather_data:

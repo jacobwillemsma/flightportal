@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Environment Variable Loader
 Simple .env file loader compatible with both CircuitPython and desktop Python.
@@ -44,7 +44,7 @@ def load_env_file(env_path=".env"):
                             env_vars[key] = value
         
     except Exception as e:
-        print("Warning: Could not load .env file: " + str(e))
+        print "Warning: Could not load .env file: " + str(e)
     
     return env_vars
 
