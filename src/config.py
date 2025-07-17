@@ -56,8 +56,8 @@ REQUEST_HEADERS = {
 # Watchdog Configuration
 WATCHDOG_TIMEOUT = 16  # seconds
 
-# Display Layout
-DISPLAY_WIDTH = 64
+# Display Layout (2x 64x32 chained panels)
+DISPLAY_WIDTH = 128
 DISPLAY_HEIGHT = 32
 
 # Memory Management

@@ -9,8 +9,8 @@ import gc
 # from typing import Dict, Any, Optional  # Not available in Python 3.4.2
 
 try:
-    # Try Raspberry Pi RGB Matrix first
-    from rgbmatrix import RGBMatrix, RGBMatrixOptions
+    # Try Raspberry Pi RGB Matrix first (Adafruit_RGBmatrix API)
+    from rgbmatrix import Adafruit_RGBmatrix
     from PIL import Image, ImageDraw, ImageFont
     import time
     HARDWARE_AVAILABLE = True
@@ -64,8 +64,8 @@ class DisplayController:
         
         # Raspberry Pi specific
         self.matrix = None
-        self.canvas = None
         self.font = None
+        self.current_image = None
         
         # Text content for labels
         self.label_short_text = ['', '', '']
@@ -80,20 +80,8 @@ class DisplayController:
     def _init_raspberry_pi_hardware(self):
         """Initialize Raspberry Pi RGB Matrix hardware."""
         try:
-            # Configure RGB Matrix options
-            options = RGBMatrixOptions()
-            options.rows = 32
-            options.cols = 64
-            options.chain_length = 1
-            options.parallel = 1
-            options.hardware_mapping = 'adafruit-hat'
-            options.gpio_slowdown = 2  # May need adjustment for Pi model
-            options.brightness = 50
-            options.drop_privileges = False  # Keep root privileges for GPIO
-            
-            # Initialize matrix
-            self.matrix = RGBMatrix(options=options)
-            self.canvas = self.matrix.CreateFrameCanvas()
+            # Initialize matrix: 32 rows, 2 chained panels (128x32 total)
+            self.matrix = Adafruit_RGBmatrix(32, 2)
             
             # Try to load a font (fallback to default if not available)
             try:
@@ -101,8 +89,11 @@ class DisplayController:
             except:
                 self.font = None
             
+            # Create initial blank image
+            self.current_image = Image.new('RGB', (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT), (0, 0, 0))
+            
             self.hardware_ready = True
-            print("Raspberry Pi RGB Matrix initialized successfully")
+            print("Raspberry Pi RGB Matrix initialized successfully (128x32)")
             
         except Exception as e:
             print("Raspberry Pi hardware initialization failed: " + str(e))
@@ -216,6 +207,52 @@ class DisplayController:
             self._print_flight_info(flight_data)
             return
         
+        if self.hardware_type == "raspberry_pi":
+            self._show_flight_info_rpi(flight_data)
+        elif self.hardware_type == "matrixportal":
+            self._show_flight_info_matrixportal(flight_data)
+    
+    def _show_flight_info_rpi(self, flight_data):
+        """Display flight info on Raspberry Pi RGB Matrix."""
+        # Prepare text content
+        callsign = flight_data.get("callsign", "Unknown")
+        aircraft = flight_data.get("aircraft_type", "")
+        altitude = flight_data.get("altitude", 0)
+        route = flight_data.get("route", "")
+        
+        # Create new image for display
+        image = Image.new('RGB', (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT), (0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        
+        # Draw text lines with colors
+        y_positions = [2, 12, 22]
+        colors = [
+            self._hex_to_rgb(config.ROW_ONE_COLOUR),
+            self._hex_to_rgb(config.ROW_TWO_COLOUR), 
+            self._hex_to_rgb(config.ROW_THREE_COLOUR)
+        ]
+        
+        # Draw the text
+        draw.text((2, y_positions[0]), callsign, fill=colors[0], font=self.font)
+        draw.text((2, y_positions[1]), "{} {}ft".format(aircraft, altitude), fill=colors[1], font=self.font)
+        draw.text((2, y_positions[2]), route[:18] if route else "", fill=colors[2], font=self.font)
+        
+        # Show on matrix
+        self.matrix.SetImage(image.im.id, 0, 0)
+        self.current_image = image
+        
+        # Animate plane
+        self._animate_plane_rpi()
+        
+        # Show scrolling text for long content
+        if len(route) > 18:
+            self._scroll_text_rpi(route, y_positions[2], colors[2])
+        
+        if config.DEBUG_MODE:
+            print("Displayed flight: {} - {} at {}ft".format(callsign, aircraft, altitude))
+    
+    def _show_flight_info_matrixportal(self, flight_data):
+        """Display flight info on MatrixPortal (existing logic)."""
         # Prepare text content
         callsign = flight_data.get("callsign", "Unknown")
         aircraft = flight_data.get("aircraft_type", "")
@@ -253,6 +290,46 @@ class DisplayController:
             self._print_weather_info(weather_data)
             return
         
+        if self.hardware_type == "raspberry_pi":
+            self._show_weather_info_rpi(weather_data)
+        elif self.hardware_type == "matrixportal":
+            self._show_weather_info_matrixportal(weather_data)
+    
+    def _show_weather_info_rpi(self, weather_data):
+        """Display weather info on Raspberry Pi RGB Matrix."""
+        arrivals = weather_data.get("arrivals_runway", "Unknown")
+        departures = weather_data.get("departures_runway", "Unknown")
+        metar = weather_data.get("metar", "Weather unavailable")
+        
+        # Extract key weather info from METAR (simplified)
+        wind_info = self._extract_wind_from_metar(metar)
+        
+        # Create new image for display
+        image = Image.new('RGB', (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT), (0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        
+        # Draw text lines with colors
+        y_positions = [2, 12, 22]
+        colors = [
+            self._hex_to_rgb(config.ROW_ONE_COLOUR),
+            self._hex_to_rgb(config.ROW_TWO_COLOUR), 
+            self._hex_to_rgb(config.ROW_THREE_COLOUR)
+        ]
+        
+        # Draw the weather text
+        draw.text((2, y_positions[0]), "ARR: RWY{}".format(arrivals), fill=colors[0], font=self.font)
+        draw.text((2, y_positions[1]), "DEP: RWY{}".format(departures), fill=colors[1], font=self.font)
+        draw.text((2, y_positions[2]), wind_info, fill=colors[2], font=self.font)
+        
+        # Show on matrix
+        self.matrix.SetImage(image.im.id, 0, 0)
+        self.current_image = image
+        
+        if config.DEBUG_MODE:
+            print("Displayed weather: ARR={}, DEP={}".format(arrivals, departures))
+    
+    def _show_weather_info_matrixportal(self, weather_data):
+        """Display weather info on MatrixPortal (existing logic)."""
         arrivals = weather_data.get("arrivals_runway", "Unknown")
         departures = weather_data.get("departures_runway", "Unknown")
         metar = weather_data.get("metar", "Weather unavailable")
@@ -277,6 +354,36 @@ class DisplayController:
             print(message_data.get("message", "No flights"))
             return
         
+        if self.hardware_type == "raspberry_pi":
+            self._show_no_flights_rpi(message_data)
+        elif self.hardware_type == "matrixportal":
+            self._show_no_flights_matrixportal(message_data)
+    
+    def _show_no_flights_rpi(self, message_data):
+        """Display no flights message on Raspberry Pi RGB Matrix."""
+        # Create new image for display
+        image = Image.new('RGB', (config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT), (0, 0, 0))
+        draw = ImageDraw.Draw(image)
+        
+        # Draw text lines with colors
+        y_positions = [2, 12, 22]
+        colors = [
+            self._hex_to_rgb(config.ROW_ONE_COLOUR),
+            self._hex_to_rgb(config.ROW_TWO_COLOUR), 
+            self._hex_to_rgb(config.ROW_THREE_COLOUR)
+        ]
+        
+        # Draw the message text
+        draw.text((2, y_positions[0]), "RWY04 ACTIVE", fill=colors[0], font=self.font)
+        draw.text((2, y_positions[1]), "No Approach", fill=colors[1], font=self.font)
+        draw.text((2, y_positions[2]), "Traffic", fill=colors[2], font=self.font)
+        
+        # Show on matrix
+        self.matrix.SetImage(image.im.id, 0, 0)
+        self.current_image = image
+    
+    def _show_no_flights_matrixportal(self, message_data):
+        """Display no flights message on MatrixPortal (existing logic)."""
         message = message_data.get("message", "RWY04 Active")
         
         self.labels[0].text = "RWY04 ACTIVE"
@@ -291,10 +398,12 @@ class DisplayController:
             print("Display cleared")
             return
         
-        for label in self.labels:
-            label.text = ""
-        
-        self.matrixportal.display.show(self.display_group)
+        if self.hardware_type == "raspberry_pi":
+            self.matrix.Clear()
+        elif self.hardware_type == "matrixportal":
+            for label in self.labels:
+                label.text = ""
+            self.matrixportal.display.show(self.display_group)
     
     def _display_with_animation(self):
         """Display flight info with plane animation and text scrolling."""
@@ -402,9 +511,82 @@ class DisplayController:
     
     def feed_watchdog(self):
         """Feed the hardware watchdog."""
-        if HARDWARE_AVAILABLE:
+        if HARDWARE_AVAILABLE and self.hardware_type == "matrixportal":
             w.feed()
     
+    def _hex_to_rgb(self, hex_color):
+        """Convert hex color to RGB tuple."""
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        else:
+            # Handle RGB565 or other formats
+            r = (hex_color >> 16) & 0xFF
+            g = (hex_color >> 8) & 0xFF
+            b = hex_color & 0xFF
+            return (r, g, b)
+    
+    def _animate_plane_rpi(self):
+        """Animate plane across the Raspberry Pi RGB Matrix."""
+        try:
+            # Create plane image
+            plane_color = self._hex_to_rgb(config.PLANE_COLOUR)
+            
+            # Animate plane moving across screen
+            for x in range(config.DISPLAY_WIDTH + 20, -20, -2):
+                # Create temporary image with current display plus plane
+                temp_image = self.current_image.copy()
+                draw = ImageDraw.Draw(temp_image)
+                
+                # Draw simple plane shape (rectangle for now)
+                plane_width = 12
+                plane_height = 4
+                y = 14  # Middle of display
+                
+                if x >= 0 and x < config.DISPLAY_WIDTH:
+                    draw.rectangle(
+                        [x, y, min(x + plane_width, config.DISPLAY_WIDTH-1), y + plane_height],
+                        fill=plane_color
+                    )
+                
+                # Show on matrix
+                self.matrix.SetImage(temp_image.im.id, 0, 0)
+                time.sleep(config.PLANE_SPEED)
+            
+            # Restore original image
+            self.matrix.SetImage(self.current_image.im.id, 0, 0)
+            
+        except Exception as e:
+            print("Plane animation error: " + str(e))
+    
+    def _scroll_text_rpi(self, text, y_pos, color):
+        """Scroll text across the Raspberry Pi RGB Matrix."""
+        try:
+            # Create base image without the scrolling line
+            base_image = self.current_image.copy()
+            draw_base = ImageDraw.Draw(base_image)
+            
+            # Clear the line where we'll scroll
+            draw_base.rectangle([0, y_pos-1, config.DISPLAY_WIDTH-1, y_pos+9], fill=(0, 0, 0))
+            
+            # Calculate text width (rough estimate)
+            text_width = len(text) * 6  # Approximate character width
+            
+            # Scroll from right to left
+            for x in range(config.DISPLAY_WIDTH, -text_width, -1):
+                temp_image = base_image.copy()
+                draw = ImageDraw.Draw(temp_image)
+                draw.text((x, y_pos), text, fill=color, font=self.font)
+                
+                self.matrix.SetImage(temp_image.im.id, 0, 0)
+                time.sleep(config.TEXT_SPEED)
+            
+            # Restore original image
+            self.matrix.SetImage(self.current_image.im.id, 0, 0)
+            
+        except Exception as e:
+            print("Text scrolling error: " + str(e))
+
     def cleanup(self):
         """Cleanup display resources."""
         self.clear_display()
