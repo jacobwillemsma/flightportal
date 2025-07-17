@@ -16,6 +16,16 @@ eggs/
 .eggs/
 lib/
 lib64/
+# Exception: Keep our customized RGB matrix library
+!lib/rpi-rgb-led-matrix/
+# But ignore build artifacts in the library
+lib/rpi-rgb-led-matrix/*.o
+lib/rpi-rgb-led-matrix/*.so
+lib/rpi-rgb-led-matrix/lib/*.o
+lib/rpi-rgb-led-matrix/lib/*.a
+lib/rpi-rgb-led-matrix/led-matrix
+lib/rpi-rgb-led-matrix/minimal-example
+lib/rpi-rgb-led-matrix/text-example
 parts/
 sdist/
 var/

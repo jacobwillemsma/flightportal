@@ -19,15 +19,14 @@
 
 1. **Copy the project to your Raspberry Pi:**
    ```bash
-   # From your Mac, copy the entire flightportal project:
+   # From your Mac, copy the entire flightportal project (includes customized RGB matrix library):
    scp -r /Users/jacob/projects/flighty-project/flightportal pi@your-pi-ip:~/
    ```
 
 2. **On the Raspberry Pi, build the library:**
    ```bash
    cd ~/flightportal/lib/rpi-rgb-led-matrix
-   make clean
-   make
+   make clean && make
    ```
 
 3. **Install the Python module:**
